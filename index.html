@@ -18,7 +18,7 @@
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
   <!-- PayPal / Venmo SDK (Replace YOUR_PAYPAL_CLIENT_ID with your actual Client ID) -->
-  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD&enable-funding=venmo"></script>
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAbPmXWUUCa4XPBOXY7u5a-7LTzNsRNMxw8RGhdFeG5yp5xqal3aZb9idW_Qt-Pw2PM8NeKdk1bnklFn0&currency=USD&enable-funding=venmo"></script>
 
   <style>
     .card-zoom {
@@ -407,7 +407,7 @@
 
     // Initialize EmailJS (Replace YOUR_PUBLIC_KEY with your EmailJS account key)
     (function() {
-      emailjs.init("YOUR_PUBLIC_KEY");
+      emailjs.init("TXfN0NkCZvDXLZVjw");
     })();
 
     const firebaseConfig = {
@@ -745,7 +745,7 @@
 
               // 2. Trigger Itemized Email Notification via EmailJS
               try {
-                await emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
+                await emailjs.send("service_ojo1gwo", "template_pc2czv5", {
                   to_email: "ratpackrelics@gmail.com",
                   buyer_name: `${payer.name.given_name} ${payer.name.surname}`,
                   buyer_email: payer.email_address,
