@@ -11,6 +11,9 @@
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+  <!-- PayPal / Venmo SDK (Replace YOUR_PAYPAL_CLIENT_ID with your actual Client ID) -->
+  <script src="https://www.paypal.com/sdk/js?client-id=ASlQ59JmbT78NJ3KvDl2bsmvdOdLIqLxv6xp-jYGeHFNJisbSufBUsmxFucWlYjG4PuzOhpA1HPDSMKz&currency=USD&enable-funding=venmo"></script>
+
   <style>
     .card-zoom {
       transition: transform 0.2s ease-in-out;
@@ -222,9 +225,8 @@
         </div>
       </div>
 
-      <button onclick="checkout()" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2">
-        <i class="fa-solid fa-lock"></i> Proceed to Checkout
-      </button>
+      <!-- Live PayPal / Venmo Buttons Container -->
+      <div id="paypal-button-container" class="w-full"></div>
     </div>
   </div>
 
@@ -296,6 +298,7 @@
         banner.classList.add('hidden');
       }
       renderCards(allCards);
+      updateCartUI();
     };
 
     // Add New Card directly to Firestore (Admin Function)
@@ -416,6 +419,19 @@
       }
     };
 
+    function calculateCartTotal() {
+      let subtotal = 0;
+      cart.forEach(item => {
+        let price = parseFloat(item.price || 0);
+        if (isFlashSale) price = price * 0.90;
+        subtotal += price;
+      });
+      return {
+        subtotal: subtotal.toFixed(2),
+        total: (subtotal > 0 ? subtotal + 4.99 : 0).toFixed(2)
+      };
+    }
+
     function updateCartUI() {
       document.getElementById('cart-count').innerText = cart.length;
       const container = document.getElementById('cart-items');
@@ -424,16 +440,16 @@
         container.innerHTML = `<p id="empty-cart-msg" class="text-gray-400 text-xs text-center py-4">Your cart is currently empty.</p>`;
         document.getElementById('cart-subtotal').innerText = '$0.00';
         document.getElementById('cart-total').innerText = '$4.99';
+        renderPayPalButtons(0);
         return;
       }
 
       container.innerHTML = '';
-      let subtotal = 0;
+      const totals = calculateCartTotal();
 
       cart.forEach((item, index) => {
         let price = parseFloat(item.price || 0);
         if (isFlashSale) price = price * 0.90;
-        subtotal += price;
 
         const div = document.createElement('div');
         div.className = 'flex justify-between items-center text-xs text-gray-200';
@@ -447,8 +463,10 @@
         container.appendChild(div);
       });
 
-      document.getElementById('cart-subtotal').innerText = `$${subtotal.toFixed(2)}`;
-      document.getElementById('cart-total').innerText = `$${(subtotal + 4.99).toFixed(2)}`;
+      document.getElementById('cart-subtotal').innerText = `$${totals.subtotal}`;
+      document.getElementById('cart-total').innerText = `$${totals.total}`;
+      
+      renderPayPalButtons(parseFloat(totals.total));
     }
 
     window.removeFromCart = function(index) {
@@ -460,24 +478,42 @@
     window.toggleCartModal = () => document.getElementById('cart-modal').classList.toggle('hidden');
     window.toggleAddCardModal = () => document.getElementById('add-card-modal').classList.toggle('hidden');
 
-    window.checkout = function() {
-      if (cart.length === 0) {
-        alert("Your cart is empty! Add cards before checking out.");
-        return;
-      }
-      
-      const itemsText = cart.map(i => `• ${i.title || i.player} - $${parseFloat(i.price).toFixed(2)}`).join('\n');
-      const subtotal = document.getElementById('cart-subtotal').innerText;
-      const total = document.getElementById('cart-total').innerText;
+    // PayPal / Venmo Integration Renderer
+    function renderPayPalButtons(totalAmount) {
+      const container = document.getElementById('paypal-button-container');
+      container.innerHTML = '';
 
-      const summary = `ORDER SUMMARY:\n\n${itemsText}\n\nSubtotal: ${subtotal}\nFlat Rate Shipping: $4.99\nTotal Due: ${total}\n\nTo complete payment, send total amount via PayPal/Venmo to ratpackrelics@gmail.com with your shipping address in the notes. Click OK to open your email client!`;
+      if (totalAmount <= 0) return;
 
-      if (confirm(summary)) {
-        const mailSubject = encodeURIComponent("New Store Order - Rat Pack Relics");
-        const mailBody = encodeURIComponent(`Order Details:\n\n${itemsText}\n\nSubtotal: ${subtotal}\nShipping: $4.99\nTotal: ${total}`);
-        window.location.href = `mailto:ratpackrelics@gmail.com?subject=${mailSubject}&body=${mailBody}`;
+      if (typeof paypal !== "undefined") {
+        paypal.Buttons({
+          style: {
+            layout: 'vertical',
+            color: 'gold',
+            shape: 'rect',
+            label: 'paypal'
+          },
+          createOrder: function(data, actions) {
+            return actions.order.create({
+              purchase_units: [{
+                amount: {
+                  value: totalAmount.toFixed(2)
+                },
+                description: 'Rat Pack Relics Store Purchase'
+              }]
+            });
+          },
+          onApprove: function(data, actions) {
+            return actions.order.capture().then(function(details) {
+              alert('Payment successful! Thank you for your purchase, ' + details.payer.name.given_name);
+              cart = [];
+              updateCartUI();
+              toggleCartModal();
+            });
+          }
+        }).render('#paypal-button-container');
       }
-    };
+    }
 
     // Initialize on page load
     fetchInventory();
