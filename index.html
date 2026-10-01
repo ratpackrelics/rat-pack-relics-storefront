@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rat Pack Relics | Sports Cards & Consignment</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    .card-zoom {
+      transition: transform 0.2s ease-in-out;
+    }
+    .card-zoom:hover {
+      transform: translateY(-4px);
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans">
+
+  <!-- Header / Navigation -->
+  <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-amber-500 text-gray-900 font-black p-2 rounded-lg text-xl tracking-wider">RPR</div>
+        <div>
+          <h1 class="text-2xl font-bold tracking-wide text-white">Rat Pack Relics</h1>
+          <p class="text-xs text-amber-400">Sports Trading Cards & Live Stream Consignments</p>
+        </div>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="flex items-center gap-3">
+        <button onclick="toggleConsignModal()" class="bg-amber-500 hover:bg-amber-400 text-gray-900 font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
+          <i class="fa-solid font-bold fa-handshake"></i> Consign Cards
+        </button>
+        <button onclick="toggleCartModal()" class="relative bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
+          <i class="fa-solid fa-cart-shopping"></i> Cart
+          <span id="cart-count" class="bg-amber-500 text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Admin Toolbar (Toggled via ?admin=true parameter) -->
+  <div id="admin-bar" class="hidden bg-amber-900/60 border-b border-amber-500/50 px-4 py-2 text-sm text-amber-200">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <span class="font-semibold"><i class="fa-solid fa-user-shield mr-2"></i>Admin Mode Active</span>
+      <div class="flex gap-2">
+        <button class="bg-amber-500 text-gray-900 px-3 py-1 rounded font-bold text-xs hover:bg-amber-400">+ Add Card</button>
+        <button class="bg-gray-700 text-amber-200 px-3 py-1 rounded font-bold text-xs hover:bg-gray-600">Flash Sale Toggle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+    
+    <!-- Hero / Stream Banner -->
+    <section class="bg-gradient-to-r from-gray-800 to-gray-800/60 border border-gray-700 rounded-2xl p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="space-y-2 text-center md:text-left">
+        <span class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider animate-pulse">Whatnot Live Shows</span>
+        <h2 class="text-2xl md:text-3xl font-extrabold text-white">Live Card Auctions & Drops</h2>
+        <p class="text-gray-300 text-sm max-w-xl">Catch us live on Whatnot every Tuesday and Friday night, with weekly web uploads every Wednesday!</p>
+      </div>
+      <div class="flex gap-3">
+        <a href="https://whatnot.com" target="_blank" class="bg-red-600 hover:bg-red-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2">
+          <i class="fa-solid fa-tv"></i> Catch Next Stream
+        </a>
+      </div>
+    </section>
+
+    <!-- Search & Filter Bar -->
+    <section class="mb-8 space-y-4">
+      <div class="flex flex-col md:flex-row gap-4 justify-between">
+        <div class="relative flex-grow">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input type="text" id="search-input" onkeyup="filterCards()" placeholder="Search player, team, set, or year..." class="w-full bg-gray-800 border border-gray-700 text-white pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:border-amber-500 transition text-sm">
+        </div>
+        <div class="flex gap-3">
+          <select id="sport-filter" onchange="filterCards()" class="bg-gray-800 border border-gray-700 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+            <option value="ALL">All Sports</option>
+            <option value="Football">Football</option>
+            <option value="Baseball">Baseball</option>
+            <option value="Basketball">Basketball</option>
+          </select>
+          <select id="sort-filter" onchange="filterCards()" class="bg-gray-800 border border-gray-700 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+            <option value="newest">Newly Added</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inventory Grid -->
+    <section>
+      <div id="loading-spinner" class="text-center py-12">
+        <i class="fa-solid fa-circle-notch fa-spin text-3xl text-amber-500"></i>
+        <p class="text-gray-400 text-sm mt-3">Fetching vault inventory...</p>
+      </div>
+
+      <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 hidden">
+        <!-- Card items will be injected here dynamically by JavaScript -->
+      </div>
+
+      <div id="no-results" class="hidden text-center py-12 bg-gray-800/40 rounded-xl border border-gray-700">
+        <i class="fa-solid fa-box-open text-4xl text-gray-500 mb-3"></i>
+        <p class="text-gray-300 font-medium">No matching cards found.</p>
+        <p class="text-xs text-gray-500 mt-1">Try adjusting your search terms or filters.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Consignment Modal -->
+  <div id="consign-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
+      <button onclick="toggleConsignModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      
+      <h3 class="text-xl font-bold text-white mb-1"><i class="fa-solid fa-handshake text-amber-500 mr-2"></i>Consign Your Cards</h3>
+      <p class="text-xs text-gray-400 mb-4">Let Rat Pack Relics feature your cards in upcoming Whatnot live streams and store drops!</p>
+
+      <div class="space-y-4 text-sm text-gray-300">
+        <div class="bg-gray-900 p-4 rounded-xl border border-gray-700">
+          <h4 class="font-bold text-amber-400 text-xs uppercase tracking-wider mb-2">Shipping Address for Consignments</h4>
+          <p class="text-white font-medium">Rat Pack Relics</p>
+          <p>545 Whitney Rd</p>
+          <p>Mocksville, NC 27028</p>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-white mb-1">Tiered Commission Rates</h4>
+          <ul class="list-disc list-inside text-xs space-y-1 text-gray-400">
+            <li>Cards sold under $50: 15% commission</li>
+            <li>Cards $50 - $250: 12% commission</li>
+            <li>Cards $250+: 10% commission</li>
+          </ul>
+        </div>
+
+        <p class="text-xs text-gray-400">Items are added into a 4-stream / 30-day window with direct payout options upon sale completion.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Modal -->
+  <div id="cart-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 relative">
+      <button onclick="toggleCartModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      
+      <h3 class="text-xl font-bold text-white mb-4"><i class="fa-solid fa-cart-shopping text-amber-500 mr-2"></i>Your Order</h3>
+      
+      <div id="cart-items" class="space-y-3 max-h-60 overflow-y-auto mb-4 border-t border-b border-gray-700 py-3">
+        <p id="empty-cart-msg" class="text-gray-400 text-xs text-center py-4">Your cart is currently empty.</p>
+      </div>
+
+      <div class="space-y-2 mb-6">
+        <div class="flex justify-between text-sm text-gray-400">
+          <span>Subtotal</span>
+          <span id="cart-subtotal" class="text-white font-medium">$0.00</span>
+        </div>
+        <div class="flex justify-between text-sm text-gray-400">
+          <span>Shipping</span>
+          <span class="text-amber-400 font-medium">Flat Rate $4.99</span>
+        </div>
+        <div class="flex justify-between text-base font-bold text-white pt-2 border-t border-gray-700">
+          <span>Total</span>
+          <span id="cart-total">$4.99</span>
+        </div>
+      </div>
+
+      <button onclick="checkout()" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold py-3 rounded-xl transition flex justify-center items-center gap-2">
+        <i class="fa-solid fa-lock"></i> Proceed to Checkout
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 border-t border-gray-700 mt-12 py-8 text-center text-xs text-gray-500">
+    <p>&copy; 2026 Rat Pack Relics. All rights reserved.</p>
+    <p class="mt-1">Mocksville, NC 27028</p>
+  </footer>
+
+  <!-- Firebase Integration Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // REPLACE THIS OBJECT WITH YOUR ACTUAL FIREBASE CONFIG KEYS
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let allCards = [];
+    let cart = [];
+
+    // Check URL parameters for Admin Mode
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === 'true') {
+      document.getElementById('admin-bar').classList.remove('hidden');
+    }
+
+    // Load Cards from Firestore
+    async function fetchInventory() {
+      const spinner = document.getElementById('loading-spinner');
+      const grid = document.getElementById('cards-grid');
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "inventory"));
+        allCards = [];
+        querySnapshot.forEach((doc) => {
+          allCards.push({ id: doc.id, ...doc.data() });
+        });
+
+        spinner.classList.add('hidden');
+        grid.classList.remove('hidden');
+        renderCards(allCards);
+      } catch (error) {
+        console.error("Error loading inventory from Firestore:", error);
+        spinner.innerHTML = `<p class="text-red-400 text-sm"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Error connecting to inventory vault.</p>`;
+      }
+    }
+
+    // Render Cards in Grid
+    window.renderCards = function(cards) {
+      const grid = document.getElementById('cards-grid');
+      const noResults = document.getElementById('no-results');
+      grid.innerHTML = '';
+
+      if (cards.length === 0) {
+        grid.classList.add('hidden');
+        noResults.classList.remove('hidden');
+        return;
+      }
+
+      noResults.classList.add('hidden');
+      grid.classList.remove('hidden');
+
+      cards.forEach(card => {
+        const price = card.price ? parseFloat(card.price).toFixed(2) : "0.00";
+        const title = card.title || "Untitled Card";
+        const sport = card.sport || "NFL";
+        const condition = card.condition || "Sleeved / Raw";
+        const image = card.frontImage || 'https://via.placeholder.com/300x400/1f2937/9ca3af?text=No+Image';
+
+        const cardEl = document.createElement('div');
+        cardEl.className = 'bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg card-zoom flex flex-col justify-between';
+        cardEl.innerHTML = `
+          <div>
+            <div class="h-64 bg-gray-900 overflow-hidden relative flex items-center justify-center p-2">
+              <img src="${image}" alt="${title}" class="h-full object-contain rounded">
+              <span class="absolute top-2 left-2 bg-gray-900/80 backdrop-blur-md text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-500/30">${sport}</span>
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold text-white text-sm line-clamp-1 mb-1">${title}</h3>
+              <p class="text-xs text-gray-400 mb-3">${condition}</p>
+            </div>
+          </div>
+          <div class="p-4 pt-0 flex items-center justify-between mt-auto">
+            <span class="text-lg font-black text-amber-400">$${price}</span>
+            <button onclick="addToCart('${card.id}')" class="bg-amber-500 hover:bg-amber-400 text-gray-900 px-3 py-1.5 rounded-lg font-bold text-xs transition">
+              + Cart
+            </button>
+          </div>
+        `;
+        grid.appendChild(cardEl);
+      });
+    };
+
+    // Filter and Search
+    window.filterCards = function() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const sport = document.getElementById('sport-filter').value;
+      const sort = document.getElementById('sort-filter').value;
+
+      let filtered = allCards.filter(card => {
+        const titleMatch = (card.title || '').toLowerCase().includes(search);
+        const sportMatch = sport === 'ALL' || (card.sport || '').toLowerCase() === sport.toLowerCase();
+        return titleMatch && sportMatch;
+      });
+
+      if (sort === 'price-low') {
+        filtered.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+      } else if (sort === 'price-high') {
+        filtered.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+      }
+
+      renderCards(filtered);
+    };
+
+    // Cart Handlers
+    window.addToCart = function(cardId) {
+      const item = allCards.find(c => c.id === cardId);
+      if (item) {
+        cart.push(item);
+        updateCartUI();
+      }
+    };
+
+    function updateCartUI() {
+      document.getElementById('cart-count').innerText = cart.length;
+      const container = document.getElementById('cart-items');
+      const emptyMsg = document.getElementById('empty-cart-msg');
+      
+      if (cart.length === 0) {
+        container.innerHTML = `<p id="empty-cart-msg" class="text-gray-400 text-xs text-center py-4">Your cart is currently empty.</p>`;
+        document.getElementById('cart-subtotal').innerText = '$0.00';
+        document.getElementById('cart-total').innerText = '$4.99';
+        return;
+      }
+
+      container.innerHTML = '';
+      let subtotal = 0;
+
+      cart.forEach((item, index) => {
+        subtotal += parseFloat(item.price || 0);
+        const div = document.createElement('div');
+        div.className = 'flex justify-between items-center text-xs text-gray-200';
+        div.innerHTML = `
+          <span class="truncate max-w-[200px]">${item.title}</span>
+          <div class="flex items-center gap-2">
+            <span class="font-bold">$${parseFloat(item.price).toFixed(2)}</span>
+            <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+
+      document.getElementById('cart-subtotal').innerText = `$${subtotal.toFixed(2)}`;
+      document.getElementById('cart-total').innerText = `$${(subtotal + 4.99).toFixed(2)}`;
+    }
+
+    window.removeFromCart = function(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+    };
+
+    window.toggleConsignModal = () => document.getElementById('consign-modal').classList.toggle('hidden');
+    window.toggleCartModal = () => document.getElementById('cart-modal').classList.toggle('hidden');
+
+    window.checkout = function() {
+      if (cart.length === 0) return alert("Your cart is empty!");
+      alert("Proceeding to secure checkout...");
+    };
+
+    // Initialize on page load
+    fetchInventory();
+  </script>
+</body>
+</html>
