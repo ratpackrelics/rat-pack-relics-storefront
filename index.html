@@ -271,10 +271,15 @@
 
     <!-- Cart Modal -->
     <div id="cart-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-      <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 relative">
+      <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
         <button onclick="toggleCartModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
         
         <h3 class="text-xl font-bold text-white mb-4"><i class="fa-solid fa-cart-shopping text-amber-500 mr-2"></i>Your Order</h3>
+
+        <!-- Free Shipping Banner -->
+        <div class="bg-gray-900 border border-gray-700 rounded-xl p-2.5 mb-4 text-center text-xs text-gray-300">
+          🚚 <span class="font-bold text-amber-400">FREE SHIPPING</span> on all orders $40 or more!
+        </div>
         
         <div id="cart-items" class="space-y-3 max-h-60 overflow-y-auto mb-4 border-t border-b border-gray-700 py-3">
           <p id="empty-cart-msg" class="text-gray-400 text-xs text-center py-4">Your cart is currently empty.</p>
@@ -287,13 +292,18 @@
           </div>
           <div class="flex justify-between text-sm text-gray-400">
             <span>Shipping</span>
-            <span class="text-amber-400 font-medium">Flat Rate $4.99</span>
+            <span id="cart-shipping" class="text-amber-400 font-medium">Free ($40+ orders)</span>
           </div>
           <div class="flex justify-between text-base font-bold text-white pt-2 border-t border-gray-700">
             <span>Total</span>
-            <span id="cart-total">$4.99</span>
+            <span id="cart-total">$0.00</span>
           </div>
         </div>
+
+        <!-- Live PayPal / Venmo Buttons Container -->
+        <div id="paypal-button-container" class="w-full"></div>
+      </div>
+    </div>
 
         <!-- Live PayPal / Venmo Buttons Container -->
         <div id="paypal-button-container" class="w-full"></div>
@@ -646,17 +656,19 @@
     };
 
     function calculateCartTotal() {
-      let subtotal = 0;
-      cart.forEach(item => {
-        let price = parseFloat(item.price || 0);
-        if (isFlashSale) price = price * 0.90;
-        subtotal += price;
-      });
-      return {
-        subtotal: subtotal.toFixed(2),
-        total: (subtotal > 0 ? subtotal + 4.99 : 0).toFixed(2)
-      };
-    }
+  const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+  
+  // Free shipping if subtotal is $40 or more; $0 shipping if cart is empty; otherwise $4.99
+  const shipping = (subtotal >= 40 || subtotal === 0) ? 0 : 4.99;
+  const total = subtotal + shipping;
+
+  return {
+    subtotal: subtotal.toFixed(2),
+    shipping: shipping.toFixed(2),
+    total: total.toFixed(2),
+    itemCount: cart.length
+  };
+}
 
     function updateCartUI() {
       document.getElementById('cart-count').innerText = cart.length;
