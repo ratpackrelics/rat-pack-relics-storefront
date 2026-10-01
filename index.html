@@ -28,322 +28,381 @@
       transform: translateY(-4px);
     }
 
-    /* Print Styles for Consignment Agreement Form */
+    /* Strict Print Styles: Hide site layout completely to prevent blank multi-page output */
     @media print {
       body * {
-        visibility: hidden;
+        visibility: hidden !important;
+      }
+      #site-root, #site-root * {
+        display: none !important;
       }
       #printable-consignment-form, #printable-consignment-form * {
-        visibility: visible;
+        visibility: visible !important;
+        display: block !important;
       }
       #printable-consignment-form {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        color: #000 !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
         background: #fff !important;
-        padding: 20px;
+        color: #000 !important;
+      }
+      #printable-consignment-form table, 
+      #printable-consignment-form tr, 
+      #printable-consignment-form td {
+        display: table !important;
+      }
+      #printable-consignment-form tr {
+        display: table-row !important;
+      }
+      #printable-consignment-form td {
+        display: table-cell !important;
+      }
+      #printable-consignment-form ol,
+      #printable-consignment-form ul,
+      #printable-consignment-form li {
+        display: list-item !important;
+      }
+      @page {
+        size: auto;
+        margin: 15mm;
       }
     }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans">
 
-  <!-- Flash Sale Announcement Banner -->
-  <div id="flash-sale-banner" class="hidden bg-amber-500 text-gray-900 text-center py-2 px-4 font-bold text-xs uppercase tracking-wider flex justify-center items-center gap-2">
-    <i class="fa-solid fa-bolt animate-bounce"></i> FLASH SALE ACTIVE: Enjoy special pricing on select cards! <i class="fa-solid fa-bolt animate-bounce"></i>
-  </div>
+  <!-- Wrapper for screen display (Hidden during print) -->
+  <div id="site-root" class="flex flex-col min-h-screen">
 
-  <!-- Header / Navigation -->
-  <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-      <div class="flex items-center gap-3">
-        <div class="bg-amber-500 text-gray-900 font-black p-2 rounded-lg text-xl tracking-wider">RPR</div>
-        <div>
-          <h1 class="text-2xl font-bold tracking-wide text-white">Rat Pack Relics</h1>
-          <p class="text-xs text-amber-400">Sports Trading Cards & Live Stream Consignments</p>
+    <!-- Flash Sale Announcement Banner -->
+    <div id="flash-sale-banner" class="hidden bg-amber-500 text-gray-900 text-center py-2 px-4 font-bold text-xs uppercase tracking-wider flex justify-center items-center gap-2">
+      <i class="fa-solid fa-bolt animate-bounce"></i> FLASH SALE ACTIVE: Enjoy special pricing on select cards! <i class="fa-solid fa-bolt animate-bounce"></i>
+    </div>
+
+    <!-- Header / Navigation -->
+    <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+          <div class="bg-amber-500 text-gray-900 font-black p-2 rounded-lg text-xl tracking-wider">RPR</div>
+          <div>
+            <h1 class="text-2xl font-bold tracking-wide text-white">Rat Pack Relics</h1>
+            <p class="text-xs text-amber-400">Sports Trading Cards & Live Stream Consignments</p>
+          </div>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="flex items-center gap-3">
+          <button onclick="toggleConsignModal()" class="bg-amber-500 hover:bg-amber-400 text-gray-900 font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
+            <i class="fa-solid font-bold fa-handshake"></i> Consign Cards
+          </button>
+          <button onclick="toggleCartModal()" class="relative bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
+            <i class="fa-solid fa-cart-shopping"></i> Cart
+            <span id="cart-count" class="bg-amber-500 text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+          </button>
         </div>
       </div>
+    </header>
 
-      <!-- Header Actions -->
-      <div class="flex items-center gap-3">
-        <button onclick="toggleConsignModal()" class="bg-amber-500 hover:bg-amber-400 text-gray-900 font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
-          <i class="fa-solid font-bold fa-handshake"></i> Consign Cards
-        </button>
-        <button onclick="toggleCartModal()" class="relative bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
-          <i class="fa-solid fa-cart-shopping"></i> Cart
-          <span id="cart-count" class="bg-amber-500 text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
-        </button>
+    <!-- Admin Toolbar (Toggled via ?admin=true parameter) -->
+    <div id="admin-bar" class="hidden bg-amber-900/60 border-b border-amber-500/50 px-4 py-2 text-sm text-amber-200">
+      <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+        <span class="font-semibold"><i class="fa-solid fa-user-shield mr-2"></i>Admin Mode Active</span>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleAddCardModal()" class="bg-amber-500 text-gray-900 px-3 py-1 rounded font-bold text-xs hover:bg-amber-400">+ Add Card</button>
+          
+          <!-- Direct Browser CSV Upload Button & Hidden Input -->
+          <label class="bg-emerald-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-emerald-500 cursor-pointer flex items-center gap-1">
+            <i class="fa-solid fa-file-csv"></i> Import CSV
+            <input type="file" id="csv-file-input" accept=".csv" onchange="handleCSVImport(event)" class="hidden">
+          </label>
+
+          <button onclick="toggleFlashSale()" class="bg-gray-700 text-amber-200 border border-amber-500/40 px-3 py-1 rounded font-bold text-xs hover:bg-gray-600">⚡ Flash Sale Toggle</button>
+        </div>
       </div>
     </div>
-  </header>
 
-  <!-- Admin Toolbar (Toggled via ?admin=true parameter) -->
-  <div id="admin-bar" class="hidden bg-amber-900/60 border-b border-amber-500/50 px-4 py-2 text-sm text-amber-200">
-    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
-      <span class="font-semibold"><i class="fa-solid fa-user-shield mr-2"></i>Admin Mode Active</span>
-      <div class="flex items-center gap-2">
-        <button onclick="toggleAddCardModal()" class="bg-amber-500 text-gray-900 px-3 py-1 rounded font-bold text-xs hover:bg-amber-400">+ Add Card</button>
-        
-        <!-- Direct Browser CSV Upload Button & Hidden Input -->
-        <label class="bg-emerald-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-emerald-500 cursor-pointer flex items-center gap-1">
-          <i class="fa-solid fa-file-csv"></i> Import CSV
-          <input type="file" id="csv-file-input" accept=".csv" onchange="handleCSVImport(event)" class="hidden">
-        </label>
-
-        <button onclick="toggleFlashSale()" class="bg-gray-700 text-amber-200 border border-amber-500/40 px-3 py-1 rounded font-bold text-xs hover:bg-gray-600">⚡ Flash Sale Toggle</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Content Area -->
-  <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
-    
-    <!-- Hero / Stream Banner -->
-    <section class="bg-gradient-to-r from-gray-800 to-gray-800/60 border border-gray-700 rounded-2xl p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
-      <div class="space-y-2 text-center md:text-left">
-        <span class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider animate-pulse">Whatnot Live Shows</span>
-        <h2 class="text-2xl md:text-3xl font-extrabold text-white">Live Card Auctions & Drops</h2>
-        <p class="text-gray-300 text-sm max-w-xl">Catch us live on Whatnot every Tuesday and Friday night, with weekly web uploads every Wednesday!</p>
-      </div>
-      <div class="flex gap-3">
-        <a href="https://whatnot.com" target="_blank" class="bg-red-600 hover:bg-red-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2">
-          <i class="fa-solid fa-tv"></i> Catch Next Stream
-        </a>
-      </div>
-    </section>
-
-    <!-- Search & Filter Bar -->
-    <section class="mb-8 space-y-4">
-      <div class="flex flex-col md:flex-row gap-4 justify-between">
-        <div class="relative flex-grow">
-          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <input type="text" id="search-input" onkeyup="filterCards()" placeholder="Search player, team, set, or year..." class="w-full bg-gray-800 border border-gray-700 text-white pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:border-amber-500 transition text-sm">
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+      
+      <!-- Hero / Stream Banner -->
+      <section class="bg-gradient-to-r from-gray-800 to-gray-800/60 border border-gray-700 rounded-2xl p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="space-y-2 text-center md:text-left">
+          <span class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider animate-pulse">Whatnot Live Shows</span>
+          <h2 class="text-2xl md:text-3xl font-extrabold text-white">Live Card Auctions & Drops</h2>
+          <p class="text-gray-300 text-sm max-w-xl">Catch us live on Whatnot every Tuesday and Friday night, with weekly web uploads every Wednesday!</p>
         </div>
         <div class="flex gap-3">
-          <select id="sport-filter" onchange="filterCards()" class="bg-gray-800 border border-gray-700 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-500">
-            <option value="ALL">All Sports</option>
-            <option value="Football">Football</option>
-            <option value="Baseball">Baseball</option>
-            <option value="Basketball">Basketball</option>
-          </select>
-          <select id="sort-filter" onchange="filterCards()" class="bg-gray-800 border border-gray-700 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-500">
-            <option value="newest">Newly Added</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-          </select>
+          <a href="https://whatnot.com" target="_blank" class="bg-red-600 hover:bg-red-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2">
+            <i class="fa-solid fa-tv"></i> Catch Next Stream
+          </a>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Inventory Grid -->
-    <section>
-      <div id="loading-spinner" class="text-center py-12">
-        <i class="fa-solid fa-circle-notch fa-spin text-3xl text-amber-500"></i>
-        <p class="text-gray-400 text-sm mt-3">Fetching vault inventory...</p>
-      </div>
-
-      <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 hidden">
-        <!-- Card items injected here -->
-      </div>
-
-      <div id="no-results" class="hidden text-center py-12 bg-gray-800/40 rounded-xl border border-gray-700">
-        <i class="fa-solid fa-box-open text-4xl text-gray-500 mb-3"></i>
-        <p class="text-gray-300 font-medium">No matching cards available.</p>
-        <p class="text-xs text-gray-500 mt-1">Try adjusting your search terms or filters.</p>
-      </div>
-    </section>
-  </main>
-
-  <!-- Admin: Add Card Modal -->
-  <div id="add-card-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 relative">
-      <button onclick="toggleAddCardModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-      
-      <h3 class="text-xl font-bold text-white mb-4"><i class="fa-solid fa-plus text-amber-500 mr-2"></i>Add New Card to Vault</h3>
-      
-      <form id="add-card-form" onsubmit="saveCardToFirestore(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-gray-300 mb-1">Card Title / Player Name</label>
-          <input type="text" id="new-card-title" required placeholder="e.g. 1986 Topps Steve Young RC" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
-        </div>
-        
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-gray-300 mb-1">Price ($)</label>
-            <input type="number" step="0.01" id="new-card-price" required placeholder="15.00" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+      <!-- Search & Filter Bar -->
+      <section class="mb-8 space-y-4">
+        <div class="flex flex-col md:flex-row gap-4 justify-between">
+          <div class="relative flex-grow">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="search-input" onkeyup="filterCards()" placeholder="Search player, team, set, or year..." class="w-full bg-gray-800 border border-gray-700 text-white pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:border-amber-500 transition text-sm">
           </div>
-          <div>
-            <label class="block text-xs font-bold text-gray-300 mb-1">Sport</label>
-            <select id="new-card-sport" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+          <div class="flex gap-3">
+            <select id="sport-filter" onchange="filterCards()" class="bg-gray-800 border border-gray-700 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+              <option value="ALL">All Sports</option>
               <option value="Football">Football</option>
               <option value="Baseball">Baseball</option>
               <option value="Basketball">Basketball</option>
             </select>
+            <select id="sort-filter" onchange="filterCards()" class="bg-gray-800 border border-gray-700 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-amber-500">
+              <option value="newest">Newly Added</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Inventory Grid -->
+      <section>
+        <div id="loading-spinner" class="text-center py-12">
+          <i class="fa-solid fa-circle-notch fa-spin text-3xl text-amber-500"></i>
+          <p class="text-gray-400 text-sm mt-3">Fetching vault inventory...</p>
+        </div>
+
+        <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 hidden">
+          <!-- Card items injected here -->
+        </div>
+
+        <div id="no-results" class="hidden text-center py-12 bg-gray-800/40 rounded-xl border border-gray-700">
+          <i class="fa-solid fa-box-open text-4xl text-gray-500 mb-3"></i>
+          <p class="text-gray-300 font-medium">No matching cards available.</p>
+          <p class="text-xs text-gray-500 mt-1">Try adjusting your search terms or filters.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Admin: Add Card Modal -->
+    <div id="add-card-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 relative">
+        <button onclick="toggleAddCardModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+        
+        <h3 class="text-xl font-bold text-white mb-4"><i class="fa-solid fa-plus text-amber-500 mr-2"></i>Add New Card to Vault</h3>
+        
+        <form id="add-card-form" onsubmit="saveCardToFirestore(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Card Title / Player Name</label>
+            <input type="text" id="new-card-title" required placeholder="e.g. 1986 Topps Steve Young RC" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-gray-300 mb-1">Price ($)</label>
+              <input type="number" step="0.01" id="new-card-price" required placeholder="15.00" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-300 mb-1">Sport</label>
+              <select id="new-card-sport" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+                <option value="Football">Football</option>
+                <option value="Baseball">Baseball</option>
+                <option value="Basketball">Basketball</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Condition / Details</label>
+            <input type="text" id="new-card-condition" placeholder="e.g. PSA 9 Mint / Raw Sleeved" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Image URL</label>
+            <input type="url" id="new-card-image" placeholder="https://..." class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+          </div>
+
+          <button type="submit" id="save-card-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold py-2.5 rounded-xl transition text-sm">
+            Upload Card to Store
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Consignment Modal -->
+    <div id="consign-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
+        <button onclick="toggleConsignModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+        
+        <h3 class="text-xl font-bold text-white mb-1"><i class="fa-solid fa-handshake text-amber-500 mr-2"></i>Consign Your Cards</h3>
+        <p class="text-xs text-gray-400 mb-4">Let Rat Pack Relics feature your cards in upcoming Whatnot live streams and store drops!</p>
+
+        <div class="space-y-4 text-sm text-gray-300">
+          
+          <!-- Print Button Header CTA -->
+          <div class="bg-amber-500/10 border border-amber-500/40 p-4 rounded-xl text-center">
+            <p class="text-amber-300 font-semibold text-xs mb-2">Ready to ship your cards to us?</p>
+            <button onclick="printConsignmentForm()" class="bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-4 py-2.5 rounded-xl text-xs transition inline-flex items-center gap-2">
+              <i class="fa-solid fa-print"></i> Print Consignment Agreement & Packing Slip
+            </button>
+          </div>
+
+          <div class="bg-gray-900 p-4 rounded-xl border border-gray-700">
+            <h4 class="font-bold text-amber-400 text-xs uppercase tracking-wider mb-2">Shipping Address for Consignments</h4>
+            <p class="text-white font-medium">Rat Pack Relics</p>
+            <p>545 Whitney Rd</p>
+            <p>Mocksville, NC 27028</p>
+          </div>
+
+          <div>
+            <h4 class="font-bold text-white mb-1">Tiered Commission Rates</h4>
+            <ul class="list-disc list-inside text-xs space-y-1 text-gray-400">
+              <li>Cards sold under $10: 35% commission</li>
+              <li>Cards $10 – $50: 25% commission</li>
+              <li>Cards $50 – $250: 15% commission</li>
+              <li>Cards $250+: 10% commission</li>
+            </ul>
+          </div>
+
+          <p class="text-xs text-gray-400">Items are added into a 4-stream / 30-day window with direct payout options upon sale completion.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 relative">
+        <button onclick="toggleCartModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+        
+        <h3 class="text-xl font-bold text-white mb-4"><i class="fa-solid fa-cart-shopping text-amber-500 mr-2"></i>Your Order</h3>
+        
+        <div id="cart-items" class="space-y-3 max-h-60 overflow-y-auto mb-4 border-t border-b border-gray-700 py-3">
+          <p id="empty-cart-msg" class="text-gray-400 text-xs text-center py-4">Your cart is currently empty.</p>
+        </div>
+
+        <div class="space-y-2 mb-6">
+          <div class="flex justify-between text-sm text-gray-400">
+            <span>Subtotal</span>
+            <span id="cart-subtotal" class="text-white font-medium">$0.00</span>
+          </div>
+          <div class="flex justify-between text-sm text-gray-400">
+            <span>Shipping</span>
+            <span class="text-amber-400 font-medium">Flat Rate $4.99</span>
+          </div>
+          <div class="flex justify-between text-base font-bold text-white pt-2 border-t border-gray-700">
+            <span>Total</span>
+            <span id="cart-total">$4.99</span>
           </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-bold text-gray-300 mb-1">Condition / Details</label>
-          <input type="text" id="new-card-condition" placeholder="e.g. PSA 9 Mint / Raw Sleeved" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-gray-300 mb-1">Image URL</label>
-          <input type="url" id="new-card-image" placeholder="https://..." class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
-        </div>
-
-        <button type="submit" id="save-card-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold py-2.5 rounded-xl transition text-sm">
-          Upload Card to Store
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Consignment Modal -->
-  <div id="consign-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
-      <button onclick="toggleConsignModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-      
-      <h3 class="text-xl font-bold text-white mb-1"><i class="fa-solid fa-handshake text-amber-500 mr-2"></i>Consign Your Cards</h3>
-      <p class="text-xs text-gray-400 mb-4">Let Rat Pack Relics feature your cards in upcoming Whatnot live streams and store drops!</p>
-
-      <div class="space-y-4 text-sm text-gray-300">
-        
-        <!-- Print Button Header CTA -->
-        <div class="bg-amber-500/10 border border-amber-500/40 p-4 rounded-xl text-center">
-          <p class="text-amber-300 font-semibold text-xs mb-2">Ready to ship your cards to us?</p>
-          <button onclick="printConsignmentForm()" class="bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-4 py-2.5 rounded-xl text-xs transition inline-flex items-center gap-2">
-            <i class="fa-solid fa-print"></i> Print Consignment Agreement & Packing Slip
-          </button>
-        </div>
-
-        <div class="bg-gray-900 p-4 rounded-xl border border-gray-700">
-          <h4 class="font-bold text-amber-400 text-xs uppercase tracking-wider mb-2">Shipping Address for Consignments</h4>
-          <p class="text-white font-medium">Rat Pack Relics</p>
-          <p>545 Whitney Rd</p>
-          <p>Mocksville, NC 27028</p>
-        </div>
-
-        <div>
-          <h4 class="font-bold text-white mb-1">Tiered Commission Rates</h4>
-          <ul class="list-disc list-inside text-xs space-y-1 text-gray-400">
-            <li>Cards sold under $10: 35% commission</li>
-            <li>Cards $10 - $50: 25% commission</li>
-            <li>Cards $50 - $250: 15% commission</li>
-            <li>Cards $250+: 10% commission</li>
-          </ul>
-        </div>
-
-        <p class="text-xs text-gray-400">Items are added into a 4-stream / 30-day window with direct payout options upon sale completion.</p>
+        <!-- Live PayPal / Venmo Buttons Container -->
+        <div id="paypal-button-container" class="w-full"></div>
       </div>
     </div>
-  </div>
 
-  <!-- Cart Modal -->
-  <div id="cart-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 relative">
-      <button onclick="toggleCartModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-      
-      <h3 class="text-xl font-bold text-white mb-4"><i class="fa-solid fa-cart-shopping text-amber-500 mr-2"></i>Your Order</h3>
-      
-      <div id="cart-items" class="space-y-3 max-h-60 overflow-y-auto mb-4 border-t border-b border-gray-700 py-3">
-        <p id="empty-cart-msg" class="text-gray-400 text-xs text-center py-4">Your cart is currently empty.</p>
-      </div>
+    <!-- Footer -->
+    <footer class="bg-gray-800 border-t border-gray-700 mt-12 py-8 text-center text-xs text-gray-500">
+      <p>&copy; 2026 Rat Pack Relics. All rights reserved.</p>
+      <p class="mt-1">Mocksville, NC 27028</p>
+    </footer>
 
-      <div class="space-y-2 mb-6">
-        <div class="flex justify-between text-sm text-gray-400">
-          <span>Subtotal</span>
-          <span id="cart-subtotal" class="text-white font-medium">$0.00</span>
-        </div>
-        <div class="flex justify-between text-sm text-gray-400">
-          <span>Shipping</span>
-          <span class="text-amber-400 font-medium">Flat Rate $4.99</span>
-        </div>
-        <div class="flex justify-between text-base font-bold text-white pt-2 border-t border-gray-700">
-          <span>Total</span>
-          <span id="cart-total">$4.99</span>
-        </div>
-      </div>
+  </div> <!-- End #site-root -->
 
-      <!-- Live PayPal / Venmo Buttons Container -->
-      <div id="paypal-button-container" class="w-full"></div>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <footer class="bg-gray-800 border-t border-gray-700 mt-12 py-8 text-center text-xs text-gray-500">
-    <p>&copy; 2026 Rat Pack Relics. All rights reserved.</p>
-    <p class="mt-1">Mocksville, NC 27028</p>
-  </footer>
-
-  <!-- Hidden Printable Consignment Form (Triggered via Print Button) -->
+  <!-- Printable Consignment Form (Formatted strictly for 1-2 pages on print) -->
   <div id="printable-consignment-form" class="hidden">
-    <div style="font-family: Arial, sans-serif; line-height: 1.4; color: #000; padding: 20px;">
+    <div style="font-family: Arial, sans-serif; line-height: 1.3; color: #000; padding: 10px;">
       
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
-        <div>
-          <h1 style="font-size: 22px; font-weight: bold; margin: 0;">RAT PACK RELICS</h1>
-          <p style="font-size: 12px; margin: 2px 0 0 0;">Consignment Intake & Packing Slip</p>
-        </div>
-        <div style="text-align: right; font-size: 12px;">
-          <p style="margin: 0;"><strong>Ship To:</strong> Rat Pack Relics</p>
-          <p style="margin: 0;">545 Whitney Rd</p>
-          <p style="margin: 0;">Mocksville, NC 27028</p>
-          <p style="margin: 0;">ratpackrelics@gmail.com</p>
-        </div>
-      </div>
+      <!-- Form Header -->
+      <table style="width: 100%; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px;">
+        <tr>
+          <td style="vertical-align: top;">
+            <h1 style="font-size: 20px; font-weight: bold; margin: 0;">RAT PACK RELICS</h1>
+            <p style="font-size: 11px; margin: 2px 0 0 0; text-transform: uppercase; font-weight: bold; color: #333;">Consignment Intake & Packing Slip</p>
+          </td>
+          <td style="text-align: right; vertical-align: top; font-size: 11px; line-height: 1.2;">
+            <p style="margin: 0;"><strong>Ship To:</strong> Rat Pack Relics</p>
+            <p style="margin: 0;">545 Whitney Rd</p>
+            <p style="margin: 0;">Mocksville, NC 27028</p>
+            <p style="margin: 0;">ratpackrelics@gmail.com</p>
+          </td>
+        </tr>
+      </table>
 
-      <!-- Section 1: Consignor Info Form -->
-      <h3 style="font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 15px;">1. Consignor Information (Please Print)</h3>
-      <table style="width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 8px;">
+      <!-- Section 1: Consignor Info -->
+      <h3 style="font-size: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #666; padding-bottom: 2px; margin: 12px 0 6px 0;">1. Consignor Contact Details</h3>
+      <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
         <tr>
-          <td style="padding: 6px 0;"><strong>Full Name:</strong> _____________________________________</td>
-          <td style="padding: 6px 0;"><strong>Whatnot / Social Handle:</strong> ______________________</td>
+          <td style="padding: 5px 0; width: 50%;"><strong>Full Name:</strong> ___________________________________</td>
+          <td style="padding: 5px 0; width: 50%;"><strong>Whatnot Handle:</strong> ___________________________</td>
         </tr>
         <tr>
-          <td style="padding: 6px 0;"><strong>Phone Number:</strong> ________________________________</td>
-          <td style="padding: 6px 0;"><strong>Email Address:</strong> _________________________________</td>
+          <td style="padding: 5px 0;"><strong>Phone Number:</strong> ______________________________</td>
+          <td style="padding: 5px 0;"><strong>Email Address:</strong> ________________________________</td>
         </tr>
         <tr>
-          <td colspan="2" style="padding: 6px 0;"><strong>Return Shipping Address:</strong> __________________________________________________________________________</td>
+          <td colspan="2" style="padding: 5px 0;"><strong>Return Shipping Address:</strong> ____________________________________________________________________</td>
         </tr>
         <tr>
-          <td colspan="2" style="padding: 6px 0;"><strong>Preferred Payout Method (PayPal / Venmo handle):</strong> _________________________________________</td>
+          <td colspan="2" style="padding: 5px 0;"><strong>Payout Info (PayPal / Venmo handle):</strong> ___________________________________________________________</td>
         </tr>
       </table>
 
       <!-- Section 2: Consignment Agreement -->
-      <h3 style="font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px;">2. Consignment Terms & Boilerplate Agreement</h3>
-      <div style="font-size: 10px; text-align: justify; margin-top: 8px;">
-        <p style="margin-bottom: 5px;"><strong>1. Authorization:</strong> The Consignor grants Rat Pack Relics authorization to showcase, auction, and sell consigned cards across live streaming platforms (including Whatnot) and digital online store channels.</p>
-        <p style="margin-bottom: 5px;"><strong>2. Commission Rates:</strong> Commission fees are deducted from gross sales per individual item price: 15% for cards sold under $50; 12% for cards sold between $50–$250; 10% for cards sold over $250.</p>
-        <p style="margin-bottom: 5px;"><strong>3. Listing Window:</strong> Consigned items enter a 4-stream or 30-day listing window. Unsold items after 30 days can be returned at Consignor expense or relisted upon mutual agreement.</p>
-        <p style="margin-bottom: 5px;"><strong>4. Payouts:</strong> Payout balances are processed within 2 business days after final live stream or online checkout settlement.</p>
+      <h3 style="font-size: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #666; padding-bottom: 2px; margin: 14px 0 6px 0;">2. Consignment Terms & Conditions</h3>
+      <div style="font-size: 10px; text-align: justify; line-height: 1.3;">
+        <p style="margin: 0 0 4px 0;"><strong>1. Authorization:</strong> The Consignor grants Rat Pack Relics authorization to showcase, auction, and sell consigned items across live streaming channels (including Whatnot) and digital storefronts.</p>
+        <p style="margin: 0 0 4px 0;"><strong>2. Commission Rates:</strong> Commission fees are deducted from the gross final sale price per item as follows:</p>
+        <ul style="margin: 2px 0 4px 16px; padding: 0;">
+          <li>Cards sold under $10: 35% commission</li>
+          <li>Cards $10 – $50: 25% commission</li>
+          <li>Cards $50 – $250: 15% commission</li>
+          <li>Cards $250+: 10% commission</li>
+        </ul>
+        <p style="margin: 0 0 4px 0;"><strong>3. Listing Window:</strong> Consigned items are placed into a 4-stream / 30-day window. Unsold inventory after 30 days can be returned at Consignor expense or relisted upon mutual agreement.</p>
+        <p style="margin: 0 0 4px 0;"><strong>4. Payouts:</strong> Payout balances are processed within 2 business days after live stream or online order settlement.</p>
       </div>
 
-      <!-- Section 3: Signature -->
-      <h3 style="font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px;">3. Authorization Signature</h3>
-      <p style="font-size: 11px; margin-top: 5px;">By signing below, I confirm that I own these items and agree to the Rat Pack Relics consignment terms listed above.</p>
-      <table style="width: 100%; font-size: 12px; margin-top: 15px;">
+      <!-- Section 3: Signature Authorization -->
+      <h3 style="font-size: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #666; padding-bottom: 2px; margin: 14px 0 6px 0;">3. Consignor Signature</h3>
+      <p style="font-size: 10px; margin: 0 0 8px 0;">By signing below, I confirm ownership of these items and accept all Rat Pack Relics consignment terms listed above.</p>
+      <table style="width: 100%; font-size: 11px;">
         <tr>
           <td style="width: 70%;"><strong>Consignor Signature:</strong> X __________________________________________</td>
           <td style="width: 30%;"><strong>Date:</strong> ____________________</td>
         </tr>
       </table>
 
-      <!-- Section 4: Shipping Instructions -->
-      <h3 style="font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px;">4. Shipping & Packing Instructions</h3>
-      <ol style="font-size: 11px; padding-left: 18px; margin-top: 8px;">
-        <li>Fill out your contact information and sign Section 3 of this document.</li>
-        <li>Carefully package your cards using penny sleeves, top loaders/card savers, and painters tape or team bags for security.</li>
-        <li>Place this signed document inside the shipping box alongside your consigned cards.</li>
-        <li>Create a trackable shipping label using USPS, UPS, or FedEx addressed to:
-          <br><strong>Rat Pack Relics, 545 Whitney Rd, Mocksville, NC 27028</strong>
-        </li>
-        <li>Email your tracking number to <strong>ratpackrelics@gmail.com</strong> so we can prepare your cards for upcoming streams!</li>
+      <!-- Section 4: Itemized Inventory List -->
+      <h3 style="font-size: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #666; padding-bottom: 2px; margin: 14px 0 6px 0;">4. Itemized Card Inventory List</h3>
+      <table style="width: 100%; font-size: 10px; border-collapse: collapse; border: 1px solid #aaa; margin-top: 4px;">
+        <thead>
+          <tr style="background: #f0f0f0;">
+            <th style="border: 1px solid #aaa; padding: 4px; text-align: left; width: 8%;">#</th>
+            <th style="border: 1px solid #aaa; padding: 4px; text-align: left; width: 62%;">Card Title / Player / Year / Set</th>
+            <th style="border: 1px solid #aaa; padding: 4px; text-align: left; width: 15%;">Min / Reserve ($)</th>
+            <th style="border: 1px solid #aaa; padding: 4px; text-align: left; width: 15%;">Graded / Raw</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="border: 1px solid #aaa; padding: 4px;">1</td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td></tr>
+          <tr><td style="border: 1px solid #aaa; padding: 4px;">2</td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td></tr>
+          <tr><td style="border: 1px solid #aaa; padding: 4px;">3</td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td></tr>
+          <tr><td style="border: 1px solid #aaa; padding: 4px;">4</td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td></tr>
+          <tr><td style="border: 1px solid #aaa; padding: 4px;">5</td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td></tr>
+          <tr><td style="border: 1px solid #aaa; padding: 4px;">6</td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td><td style="border: 1px solid #aaa;"></td></tr>
+        </tbody>
+      </table>
+
+      <!-- Section 5: Shipping Instructions -->
+      <h3 style="font-size: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #666; padding-bottom: 2px; margin: 14px 0 6px 0;">5. Packing & Shipping Checklist</h3>
+      <ol style="font-size: 10px; padding-left: 16px; margin: 4px 0 0 0; line-height: 1.3;">
+        <li>Complete the contact details, inventory list, and sign Section 3 above.</li>
+        <li>Securely package cards in penny sleeves, top loaders or card savers, and team bags.</li>
+        <li>Place this completed, signed agreement inside your shipping package.</li>
+        <li>Ship via USPS, UPS, or FedEx to: <strong>Rat Pack Relics, 545 Whitney Rd, Mocksville, NC 27028</strong>.</li>
+        <li>Email your shipment tracking number to <strong>ratpackrelics@gmail.com</strong>.</li>
       </ol>
+
     </div>
   </div>
 
