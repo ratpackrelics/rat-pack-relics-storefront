@@ -51,8 +51,7 @@
     <div class="max-w-7xl mx-auto flex justify-between items-center">
       <span class="font-semibold"><i class="fa-solid fa-user-shield mr-2"></i>Admin Mode Active</span>
       <div class="flex gap-2">
-        <button class="bg-amber-500 text-gray-900 px-3 py-1 rounded font-bold text-xs hover:bg-amber-400">+ Add Card</button>
-        <button class="bg-gray-700 text-amber-200 px-3 py-1 rounded font-bold text-xs hover:bg-gray-600">Flash Sale Toggle</button>
+        <button onclick="toggleAddCardModal()" class="bg-amber-500 text-gray-900 px-3 py-1 rounded font-bold text-xs hover:bg-amber-400">+ Add Card</button>
       </div>
     </div>
   </div>
@@ -105,7 +104,7 @@
       </div>
 
       <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 hidden">
-        <!-- Card items will be injected here dynamically by JavaScript -->
+        <!-- Card items injected here -->
       </div>
 
       <div id="no-results" class="hidden text-center py-12 bg-gray-800/40 rounded-xl border border-gray-700">
@@ -115,6 +114,51 @@
       </div>
     </section>
   </main>
+
+  <!-- Admin: Add Card Modal -->
+  <div id="add-card-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-gray-800 border border-gray-700 rounded-2xl max-w-md w-full p-6 relative">
+      <button onclick="toggleAddCardModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      
+      <h3 class="text-xl font-bold text-white mb-4"><i class="fa-solid fa-plus text-amber-500 mr-2"></i>Add New Card to Vault</h3>
+      
+      <form id="add-card-form" onsubmit="saveCardToFirestore(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-300 mb-1">Card Title / Player Name</label>
+          <input type="text" id="new-card-title" required placeholder="e.g. 1986 Topps Steve Young RC" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Price ($)</label>
+            <input type="number" step="0.01" id="new-card-price" required placeholder="15.00" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Sport</label>
+            <select id="new-card-sport" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+              <option value="Football">Football</option>
+              <option value="Baseball">Baseball</option>
+              <option value="Basketball">Basketball</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-300 mb-1">Condition / Details</label>
+          <input type="text" id="new-card-condition" placeholder="e.g. PSA 9 Mint / Raw Sleeved" class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-300 mb-1">Image URL</label>
+          <input type="url" id="new-card-image" placeholder="https://..." class="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-500">
+        </div>
+
+        <button type="submit" id="save-card-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold py-2.5 rounded-xl transition text-sm">
+          Upload Card to Store
+        </button>
+      </form>
+    </div>
+  </div>
 
   <!-- Consignment Modal -->
   <div id="consign-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -187,9 +231,8 @@
   <!-- Firebase Integration Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // UPDATED FIREBASE CONFIGURATION
     const firebaseConfig = {
       apiKey: "AIzaSy...",
       authDomain: "rat-pack-relics-store.firebaseapp.com",
@@ -211,15 +254,13 @@
       document.getElementById('admin-bar').classList.remove('hidden');
     }
 
-    // Load Cards from Firestore (Checks 'inventory' collection first, then falls back to 'cards')
+    // Load Cards from Firestore
     async function fetchInventory() {
       const spinner = document.getElementById('loading-spinner');
       const grid = document.getElementById('cards-grid');
 
       try {
         let querySnapshot = await getDocs(collection(db, "inventory"));
-        
-        // Fallback check if documents were uploaded to 'cards' instead
         if (querySnapshot.empty) {
           querySnapshot = await getDocs(collection(db, "cards"));
         }
@@ -233,10 +274,46 @@
         grid.classList.remove('hidden');
         renderCards(allCards);
       } catch (error) {
-        console.error("Error loading inventory from Firestore:", error);
+        console.error("Error loading inventory:", error);
         spinner.innerHTML = `<p class="text-red-400 text-sm"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Error connecting to inventory vault.</p>`;
       }
     }
+
+    // Add New Card directly to Firestore (Admin Function)
+    window.saveCardToFirestore = async function(event) {
+      event.preventDefault();
+      const btn = document.getElementById('save-card-btn');
+      btn.innerText = "Saving to Database...";
+      btn.disabled = true;
+
+      const title = document.getElementById('new-card-title').value;
+      const price = parseFloat(document.getElementById('new-card-price').value);
+      const sport = document.getElementById('new-card-sport').value;
+      const condition = document.getElementById('new-card-condition').value || "Sleeved / Raw";
+      const frontImage = document.getElementById('new-card-image').value || 'https://via.placeholder.com/300x400/1f2937/9ca3af?text=No+Image';
+
+      try {
+        await addDoc(collection(db, "inventory"), {
+          title: title,
+          price: price,
+          sport: sport,
+          condition: condition,
+          frontImage: frontImage,
+          createdAt: new Date().toISOString()
+        });
+
+        alert("Card added successfully!");
+        document.getElementById('add-card-form').reset();
+        toggleAddCardModal();
+        fetchInventory(); // Reload inventory
+      } catch (error) {
+        console.error("Error adding card:", error);
+        alert("Failed to add card. Make sure Firestore rules allow writing.");
+      } finally {
+        btn.innerText = "Upload Card to Store";
+        btn.disabled = false;
+      }
+    };
 
     // Render Cards in Grid
     window.renderCards = function(cards) {
@@ -353,10 +430,18 @@
 
     window.toggleConsignModal = () => document.getElementById('consign-modal').classList.toggle('hidden');
     window.toggleCartModal = () => document.getElementById('cart-modal').classList.toggle('hidden');
+    window.toggleAddCardModal = () => document.getElementById('add-card-modal').classList.toggle('hidden');
 
     window.checkout = function() {
       if (cart.length === 0) return alert("Your cart is empty!");
-      alert("Proceeding to secure checkout...");
+      
+      // Formats order details for email/PayPal checkout
+      const itemsList = cart.map(i => `${i.title || i.player} ($${i.price})`).join('%0D%0A');
+      const total = document.getElementById('cart-total').innerText;
+      
+      // Opens email client with order summary sent to ratpackrelics@gmail.com
+      const mailtoUrl = `mailto:ratpackrelics@gmail.com?subject=New Store Order - Rat Pack Relics&body=Order Items:%0D%0A${itemsList}%0D%0A%0D%0ATotal (including shipping): ${total}`;
+      window.location.href = mailtoUrl;
     };
 
     // Initialize on page load
