@@ -27,6 +27,25 @@
     .card-zoom:hover {
       transform: translateY(-4px);
     }
+
+    /* Print Styles for Consignment Agreement Form */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printable-consignment-form, #printable-consignment-form * {
+        visibility: visible;
+      }
+      #printable-consignment-form {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        color: #000 !important;
+        background: #fff !important;
+        padding: 20px;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans">
@@ -191,6 +210,15 @@
       <p class="text-xs text-gray-400 mb-4">Let Rat Pack Relics feature your cards in upcoming Whatnot live streams and store drops!</p>
 
       <div class="space-y-4 text-sm text-gray-300">
+        
+        <!-- Print Button Header CTA -->
+        <div class="bg-amber-500/10 border border-amber-500/40 p-4 rounded-xl text-center">
+          <p class="text-amber-300 font-semibold text-xs mb-2">Ready to ship your cards to us?</p>
+          <button onclick="printConsignmentForm()" class="bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-4 py-2.5 rounded-xl text-xs transition inline-flex items-center gap-2">
+            <i class="fa-solid fa-print"></i> Print Consignment Agreement & Packing Slip
+          </button>
+        </div>
+
         <div class="bg-gray-900 p-4 rounded-xl border border-gray-700">
           <h4 class="font-bold text-amber-400 text-xs uppercase tracking-wider mb-2">Shipping Address for Consignments</h4>
           <p class="text-white font-medium">Rat Pack Relics</p>
@@ -201,8 +229,9 @@
         <div>
           <h4 class="font-bold text-white mb-1">Tiered Commission Rates</h4>
           <ul class="list-disc list-inside text-xs space-y-1 text-gray-400">
-            <li>Cards sold under $50: 15% commission</li>
-            <li>Cards $50 - $250: 12% commission</li>
+            <li>Cards sold under $10: 35% commission</li>
+            <li>Cards $10 - $50: 25% commission</li>
+            <li>Cards $50 - $250: 15% commission</li>
             <li>Cards $250+: 10% commission</li>
           </ul>
         </div>
@@ -249,6 +278,75 @@
     <p class="mt-1">Mocksville, NC 27028</p>
   </footer>
 
+  <!-- Hidden Printable Consignment Form (Triggered via Print Button) -->
+  <div id="printable-consignment-form" class="hidden">
+    <div style="font-family: Arial, sans-serif; line-height: 1.4; color: #000; padding: 20px;">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+        <div>
+          <h1 style="font-size: 22px; font-weight: bold; margin: 0;">RAT PACK RELICS</h1>
+          <p style="font-size: 12px; margin: 2px 0 0 0;">Consignment Intake & Packing Slip</p>
+        </div>
+        <div style="text-align: right; font-size: 12px;">
+          <p style="margin: 0;"><strong>Ship To:</strong> Rat Pack Relics</p>
+          <p style="margin: 0;">545 Whitney Rd</p>
+          <p style="margin: 0;">Mocksville, NC 27028</p>
+          <p style="margin: 0;">ratpackrelics@gmail.com</p>
+        </div>
+      </div>
+
+      <!-- Section 1: Consignor Info Form -->
+      <h3 style="font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 15px;">1. Consignor Information (Please Print)</h3>
+      <table style="width: 100%; font-size: 12px; border-collapse: collapse; margin-top: 8px;">
+        <tr>
+          <td style="padding: 6px 0;"><strong>Full Name:</strong> _____________________________________</td>
+          <td style="padding: 6px 0;"><strong>Whatnot / Social Handle:</strong> ______________________</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0;"><strong>Phone Number:</strong> ________________________________</td>
+          <td style="padding: 6px 0;"><strong>Email Address:</strong> _________________________________</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding: 6px 0;"><strong>Return Shipping Address:</strong> __________________________________________________________________________</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding: 6px 0;"><strong>Preferred Payout Method (PayPal / Venmo handle):</strong> _________________________________________</td>
+        </tr>
+      </table>
+
+      <!-- Section 2: Consignment Agreement -->
+      <h3 style="font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px;">2. Consignment Terms & Boilerplate Agreement</h3>
+      <div style="font-size: 10px; text-align: justify; margin-top: 8px;">
+        <p style="margin-bottom: 5px;"><strong>1. Authorization:</strong> The Consignor grants Rat Pack Relics authorization to showcase, auction, and sell consigned cards across live streaming platforms (including Whatnot) and digital online store channels.</p>
+        <p style="margin-bottom: 5px;"><strong>2. Commission Rates:</strong> Commission fees are deducted from gross sales per individual item price: 15% for cards sold under $50; 12% for cards sold between $50–$250; 10% for cards sold over $250.</p>
+        <p style="margin-bottom: 5px;"><strong>3. Listing Window:</strong> Consigned items enter a 4-stream or 30-day listing window. Unsold items after 30 days can be returned at Consignor expense or relisted upon mutual agreement.</p>
+        <p style="margin-bottom: 5px;"><strong>4. Payouts:</strong> Payout balances are processed within 2 business days after final live stream or online checkout settlement.</p>
+      </div>
+
+      <!-- Section 3: Signature -->
+      <h3 style="font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px;">3. Authorization Signature</h3>
+      <p style="font-size: 11px; margin-top: 5px;">By signing below, I confirm that I own these items and agree to the Rat Pack Relics consignment terms listed above.</p>
+      <table style="width: 100%; font-size: 12px; margin-top: 15px;">
+        <tr>
+          <td style="width: 70%;"><strong>Consignor Signature:</strong> X __________________________________________</td>
+          <td style="width: 30%;"><strong>Date:</strong> ____________________</td>
+        </tr>
+      </table>
+
+      <!-- Section 4: Shipping Instructions -->
+      <h3 style="font-size: 14px; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 20px;">4. Shipping & Packing Instructions</h3>
+      <ol style="font-size: 11px; padding-left: 18px; margin-top: 8px;">
+        <li>Fill out your contact information and sign Section 3 of this document.</li>
+        <li>Carefully package your cards using penny sleeves, top loaders/card savers, and painters tape or team bags for security.</li>
+        <li>Place this signed document inside the shipping box alongside your consigned cards.</li>
+        <li>Create a trackable shipping label using USPS, UPS, or FedEx addressed to:
+          <br><strong>Rat Pack Relics, 545 Whitney Rd, Mocksville, NC 27028</strong>
+        </li>
+        <li>Email your tracking number to <strong>ratpackrelics@gmail.com</strong> so we can prepare your cards for upcoming streams!</li>
+      </ol>
+    </div>
+  </div>
+
   <!-- Firebase & EmailJS Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -256,7 +354,7 @@
 
     // Initialize EmailJS (Replace YOUR_PUBLIC_KEY with your EmailJS account key)
     (function() {
-      emailjs.init("TXfN0NkCZvDXLZVjw");
+      emailjs.init("YOUR_PUBLIC_KEY");
     })();
 
     const firebaseConfig = {
@@ -308,6 +406,11 @@
         spinner.innerHTML = `<p class="text-red-400 text-sm"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Error connecting to inventory vault.</p>`;
       }
     }
+
+    // Print Consignment Agreement Trigger
+    window.printConsignmentForm = function() {
+      window.print();
+    };
 
     // Direct Browser CSV Upload Handler
     window.handleCSVImport = function(event) {
@@ -589,7 +692,7 @@
 
               // 2. Trigger Itemized Email Notification via EmailJS
               try {
-                await emailjs.send("service_ojo1gwo", "template_pc2czv5", {
+                await emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
                   to_email: "ratpackrelics@gmail.com",
                   buyer_name: `${payer.name.given_name} ${payer.name.surname}`,
                   buyer_email: payer.email_address,
