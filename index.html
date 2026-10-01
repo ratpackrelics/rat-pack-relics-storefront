@@ -14,6 +14,9 @@
   <!-- PapaParse for Browser CSV Processing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
+  <!-- EmailJS SDK for Itemized Sales Notifications -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
   <!-- PayPal / Venmo SDK (Replace YOUR_PAYPAL_CLIENT_ID with your actual Client ID) -->
   <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD&enable-funding=venmo"></script>
 
@@ -246,10 +249,15 @@
     <p class="mt-1">Mocksville, NC 27028</p>
   </footer>
 
-  <!-- Firebase Integration Script -->
+  <!-- Firebase & EmailJS Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, getDocs, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Initialize EmailJS (Replace YOUR_PUBLIC_KEY with your EmailJS account key)
+    (function() {
+      emailjs.init("TXfN0NkCZvDXLZVjw");
+    })();
 
     const firebaseConfig = {
       apiKey: "AIzaSy...",
@@ -333,7 +341,7 @@
                 sport: sport,
                 condition: condition,
                 frontImage: frontImage,
-                status: "available", // Mark item as available
+                status: "available",
                 createdAt: new Date().toISOString()
               });
               count++;
@@ -344,7 +352,7 @@
 
           alert(`Successfully imported ${count} cards directly to Firestore!`);
           document.getElementById('csv-file-input').value = '';
-          fetchInventory(); // Reload inventory grid automatically
+          fetchInventory();
         }
       });
     };
@@ -362,7 +370,7 @@
       updateCartUI();
     };
 
-    // Add New Card directly to Firestore (Single Card Admin Modal)
+    // Add New Card directly to Firestore
     window.saveCardToFirestore = async function(event) {
       event.preventDefault();
       const btn = document.getElementById('save-card-btn');
@@ -382,7 +390,7 @@
           sport: sport,
           condition: condition,
           frontImage: frontImage,
-          status: "available", // Mark item as available
+          status: "available",
           createdAt: new Date().toISOString()
         });
 
@@ -540,7 +548,7 @@
     window.toggleCartModal = () => document.getElementById('cart-modal').classList.toggle('hidden');
     window.toggleAddCardModal = () => document.getElementById('add-card-modal').classList.toggle('hidden');
 
-    // PayPal / Venmo Integration Renderer & Auto-Sold Handler
+    // PayPal / Venmo Integration Renderer & Auto-Sold Handler with Itemized Email Notification
     function renderPayPalButtons(totalAmount) {
       const container = document.getElementById('paypal-button-container');
       container.innerHTML = '';
@@ -567,7 +575,33 @@
           },
           onApprove: function(data, actions) {
             return actions.order.capture().then(async function(details) {
-              // Update all purchased items in Firestore to status "sold"
+              
+              // 1. Format Shipping Address & Itemized List for Email
+              const payer = details.payer;
+              const shipping = details.purchase_units[0].shipping.address;
+              const formattedAddress = `${shipping.address_line_1}, ${shipping.admin_area_2}, ${shipping.admin_area_1} ${shipping.postal_code}`;
+              
+              const itemList = cart.map((item, idx) => {
+                let price = parseFloat(item.price || 0);
+                if (isFlashSale) price = price * 0.90;
+                return `${idx + 1}. ${item.title || item.player} - $${price.toFixed(2)}`;
+              }).join("\n");
+
+              // 2. Trigger Itemized Email Notification via EmailJS
+              try {
+                await emailjs.send("service_ojo1gwo", "template_pc2czv5", {
+                  to_email: "ratpackrelics@gmail.com",
+                  buyer_name: `${payer.name.given_name} ${payer.name.surname}`,
+                  buyer_email: payer.email_address,
+                  shipping_address: formattedAddress,
+                  items_list: itemList,
+                  total_paid: `$${totalAmount.toFixed(2)}`
+                });
+              } catch (emailErr) {
+                console.error("Failed to send notification email:", emailErr);
+              }
+
+              // 3. Mark Items as "sold" in Firestore
               for (const item of cart) {
                 if (item.id) {
                   try {
@@ -582,11 +616,11 @@
                 }
               }
 
-              alert('Payment successful! Thank you for your purchase, ' + details.payer.name.given_name);
+              alert('Payment successful! Thank you for your purchase, ' + payer.name.given_name);
               cart = [];
               updateCartUI();
               toggleCartModal();
-              fetchInventory(); // Automatically removes sold cards from store grid
+              fetchInventory();
             });
           }
         }).render('#paypal-button-container');
