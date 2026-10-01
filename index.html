@@ -11,8 +11,11 @@
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+  <!-- PapaParse for Browser CSV Processing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
   <!-- PayPal / Venmo SDK (Replace YOUR_PAYPAL_CLIENT_ID with your actual Client ID) -->
-  <script src="https://www.paypal.com/sdk/js?client-id=ASlQ59JmbT78NJ3KvDl2bsmvdOdLIqLxv6xp-jYGeHFNJisbSufBUsmxFucWlYjG4PuzOhpA1HPDSMKz&currency=USD&enable-funding=venmo"></script>
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD&enable-funding=venmo"></script>
 
   <style>
     .card-zoom {
@@ -56,10 +59,17 @@
 
   <!-- Admin Toolbar (Toggled via ?admin=true parameter) -->
   <div id="admin-bar" class="hidden bg-amber-900/60 border-b border-amber-500/50 px-4 py-2 text-sm text-amber-200">
-    <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
       <span class="font-semibold"><i class="fa-solid fa-user-shield mr-2"></i>Admin Mode Active</span>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-2">
         <button onclick="toggleAddCardModal()" class="bg-amber-500 text-gray-900 px-3 py-1 rounded font-bold text-xs hover:bg-amber-400">+ Add Card</button>
+        
+        <!-- Direct Browser CSV Upload Button & Hidden Input -->
+        <label class="bg-emerald-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-emerald-500 cursor-pointer flex items-center gap-1">
+          <i class="fa-solid fa-file-csv"></i> Import CSV
+          <input type="file" id="csv-file-input" accept=".csv" onchange="handleCSVImport(event)" class="hidden">
+        </label>
+
         <button onclick="toggleFlashSale()" class="bg-gray-700 text-amber-200 border border-amber-500/40 px-3 py-1 rounded font-bold text-xs hover:bg-gray-600">⚡ Flash Sale Toggle</button>
       </div>
     </div>
@@ -288,7 +298,55 @@
       }
     }
 
-    // Toggle Flash Sale Banner & 10% Discount
+    // Direct Browser CSV Upload Handler
+    window.handleCSVImport = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async function(results) {
+          const rows = results.data;
+          if (!rows || rows.length === 0) {
+            alert("No rows found in the CSV file.");
+            return;
+          }
+
+          if (!confirm(`Found ${rows.length} cards in your CSV. Upload directly to Firestore inventory?`)) return;
+
+          let count = 0;
+          for (const row of rows) {
+            // Flexible field matching for varying CSV headers
+            const title = row.Title || row.title || row.Player || row.player || "Untitled Card";
+            const price = parseFloat(row.Price || row.price || 0);
+            const sport = row.Sport || row.sport || "Football";
+            const condition = row.Condition || row.condition || row.Grade || row.grade || "Raw Sleeved";
+            const frontImage = row.frontImage || row.Image || row.image || row.URL || 'https://via.placeholder.com/300x400/1f2937/9ca3af?text=No+Image';
+
+            try {
+              await addDoc(collection(db, "inventory"), {
+                title: title,
+                price: price,
+                sport: sport,
+                condition: condition,
+                frontImage: frontImage,
+                createdAt: new Date().toISOString()
+              });
+              count++;
+            } catch (err) {
+              console.error("Error uploading row:", row, err);
+            }
+          }
+
+          alert(`Successfully imported ${count} cards directly to Firestore!`);
+          document.getElementById('csv-file-input').value = '';
+          fetchInventory(); // Reload inventory grid automatically
+        }
+      });
+    };
+
+    // Toggle Flash Sale Banner & Discount
     window.toggleFlashSale = function() {
       isFlashSale = !isFlashSale;
       const banner = document.getElementById('flash-sale-banner');
@@ -301,7 +359,7 @@
       updateCartUI();
     };
 
-    // Add New Card directly to Firestore (Admin Function)
+    // Add New Card directly to Firestore (Single Card Admin Modal)
     window.saveCardToFirestore = async function(event) {
       event.preventDefault();
       const btn = document.getElementById('save-card-btn');
