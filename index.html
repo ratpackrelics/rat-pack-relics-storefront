@@ -128,7 +128,7 @@
 
       <div id="no-results" class="hidden text-center py-12 bg-gray-800/40 rounded-xl border border-gray-700">
         <i class="fa-solid fa-box-open text-4xl text-gray-500 mb-3"></i>
-        <p class="text-gray-300 font-medium">No matching cards found.</p>
+        <p class="text-gray-300 font-medium">No matching cards available.</p>
         <p class="text-xs text-gray-500 mt-1">Try adjusting your search terms or filters.</p>
       </div>
     </section>
@@ -249,7 +249,7 @@
   <!-- Firebase Integration Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSy...",
@@ -273,7 +273,7 @@
       document.getElementById('admin-bar').classList.remove('hidden');
     }
 
-    // Load Cards from Firestore
+    // Load Available Cards from Firestore
     async function fetchInventory() {
       const spinner = document.getElementById('loading-spinner');
       const grid = document.getElementById('cards-grid');
@@ -284,10 +284,13 @@
           querySnapshot = await getDocs(collection(db, "cards"));
         }
 
-        allCards = [];
-        querySnapshot.forEach((doc) => {
-          allCards.push({ id: doc.id, ...doc.data() });
+        let rawCards = [];
+        querySnapshot.forEach((docItem) => {
+          rawCards.push({ id: docItem.id, ...docItem.data() });
         });
+
+        // Filter out sold items so only available inventory is displayed
+        allCards = rawCards.filter(card => card.status !== 'sold');
 
         spinner.classList.add('hidden');
         grid.classList.remove('hidden');
@@ -317,7 +320,6 @@
 
           let count = 0;
           for (const row of rows) {
-            // Flexible field matching for varying CSV headers
             const title = row.Title || row.title || row.Player || row.player || "Untitled Card";
             const price = parseFloat(row.Price || row.price || 0);
             const sport = row.Sport || row.sport || "Football";
@@ -331,6 +333,7 @@
                 sport: sport,
                 condition: condition,
                 frontImage: frontImage,
+                status: "available", // Mark item as available
                 createdAt: new Date().toISOString()
               });
               count++;
@@ -379,6 +382,7 @@
           sport: sport,
           condition: condition,
           frontImage: frontImage,
+          status: "available", // Mark item as available
           createdAt: new Date().toISOString()
         });
 
@@ -471,7 +475,7 @@
     // Cart Handlers
     window.addToCart = function(cardId) {
       const item = allCards.find(c => c.id === cardId);
-      if (item) {
+      if (item && !cart.some(c => c.id === cardId)) {
         cart.push(item);
         updateCartUI();
       }
@@ -536,7 +540,7 @@
     window.toggleCartModal = () => document.getElementById('cart-modal').classList.toggle('hidden');
     window.toggleAddCardModal = () => document.getElementById('add-card-modal').classList.toggle('hidden');
 
-    // PayPal / Venmo Integration Renderer
+    // PayPal / Venmo Integration Renderer & Auto-Sold Handler
     function renderPayPalButtons(totalAmount) {
       const container = document.getElementById('paypal-button-container');
       container.innerHTML = '';
@@ -562,11 +566,27 @@
             });
           },
           onApprove: function(data, actions) {
-            return actions.order.capture().then(function(details) {
+            return actions.order.capture().then(async function(details) {
+              // Update all purchased items in Firestore to status "sold"
+              for (const item of cart) {
+                if (item.id) {
+                  try {
+                    const cardRef = doc(db, "inventory", item.id);
+                    await updateDoc(cardRef, {
+                      status: "sold",
+                      soldAt: new Date().toISOString()
+                    });
+                  } catch (err) {
+                    console.error("Error updating card status:", err);
+                  }
+                }
+              }
+
               alert('Payment successful! Thank you for your purchase, ' + details.payer.name.given_name);
               cart = [];
               updateCartUI();
               toggleCartModal();
+              fetchInventory(); // Automatically removes sold cards from store grid
             });
           }
         }).render('#paypal-button-container');
