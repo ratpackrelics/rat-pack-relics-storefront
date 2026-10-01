@@ -189,14 +189,14 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // REPLACE THIS OBJECT WITH YOUR ACTUAL FIREBASE CONFIG KEYS
+    // UPDATED FIREBASE CONFIGURATION
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSy...",
+      authDomain: "rat-pack-relics-store.firebaseapp.com",
+      projectId: "rat-pack-relics-store",
+      storageBucket: "rat-pack-relics-store.appspot.com",
+      messagingSenderId: "...",
+      appId: "..."
     };
 
     const app = initializeApp(firebaseConfig);
@@ -211,13 +211,19 @@
       document.getElementById('admin-bar').classList.remove('hidden');
     }
 
-    // Load Cards from Firestore
+    // Load Cards from Firestore (Checks 'inventory' collection first, then falls back to 'cards')
     async function fetchInventory() {
       const spinner = document.getElementById('loading-spinner');
       const grid = document.getElementById('cards-grid');
 
       try {
-        const querySnapshot = await getDocs(collection(db, "inventory"));
+        let querySnapshot = await getDocs(collection(db, "inventory"));
+        
+        // Fallback check if documents were uploaded to 'cards' instead
+        if (querySnapshot.empty) {
+          querySnapshot = await getDocs(collection(db, "cards"));
+        }
+
         allCards = [];
         querySnapshot.forEach((doc) => {
           allCards.push({ id: doc.id, ...doc.data() });
@@ -249,10 +255,10 @@
 
       cards.forEach(card => {
         const price = card.price ? parseFloat(card.price).toFixed(2) : "0.00";
-        const title = card.title || "Untitled Card";
+        const title = card.title || card.player || "Untitled Card";
         const sport = card.sport || "NFL";
         const condition = card.condition || "Sleeved / Raw";
-        const image = card.frontImage || 'https://via.placeholder.com/300x400/1f2937/9ca3af?text=No+Image';
+        const image = card.frontImage || card.Image || 'https://via.placeholder.com/300x400/1f2937/9ca3af?text=No+Image';
 
         const cardEl = document.createElement('div');
         cardEl.className = 'bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow-lg card-zoom flex flex-col justify-between';
@@ -285,7 +291,7 @@
       const sort = document.getElementById('sort-filter').value;
 
       let filtered = allCards.filter(card => {
-        const titleMatch = (card.title || '').toLowerCase().includes(search);
+        const titleMatch = (card.title || card.player || '').toLowerCase().includes(search);
         const sportMatch = sport === 'ALL' || (card.sport || '').toLowerCase() === sport.toLowerCase();
         return titleMatch && sportMatch;
       });
@@ -311,7 +317,6 @@
     function updateCartUI() {
       document.getElementById('cart-count').innerText = cart.length;
       const container = document.getElementById('cart-items');
-      const emptyMsg = document.getElementById('empty-cart-msg');
       
       if (cart.length === 0) {
         container.innerHTML = `<p id="empty-cart-msg" class="text-gray-400 text-xs text-center py-4">Your cart is currently empty.</p>`;
@@ -328,7 +333,7 @@
         const div = document.createElement('div');
         div.className = 'flex justify-between items-center text-xs text-gray-200';
         div.innerHTML = `
-          <span class="truncate max-w-[200px]">${item.title}</span>
+          <span class="truncate max-w-[200px]">${item.title || item.player}</span>
           <div class="flex items-center gap-2">
             <span class="font-bold">$${parseFloat(item.price).toFixed(2)}</span>
             <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
